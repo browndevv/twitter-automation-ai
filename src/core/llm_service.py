@@ -44,7 +44,8 @@ API_KEY_PLACEHOLDERS = {
     "openai_api_key": "YOUR_OPENAI_API_KEY",
     "azure_openai_api_key": "YOUR_AZURE_OPENAI_API_KEY",
     "azure_openai_endpoint": "YOUR_AZURE_OPENAI_ENDPOINT",
-    "azure_openai_deployment": "YOUR_AZURE_OPENAI_DEPLOYMENT_NAME"
+    "azure_openai_deployment": "YOUR_AZURE_OPENAI_DEPLOYMENT_NAME",
+    "copilot_api_key": "YOUR_COPILOT_API_KEY"
 }
 
 
@@ -57,10 +58,11 @@ class LLMService:
         self.gemini_client: Optional[ChatGoogleGenerativeAI] = None
         self.openai_client: Optional[AsyncOpenAI] = None
         self.azure_openai_client: Optional[AsyncAzureOpenAI] = None
+        self.copilot_client = None  # httpx.AsyncClient type when available
         
         self.service_preference_order: List[str] = self.llm_settings.get(
             'service_preference_order', 
-            ['azure', 'openai', 'gemini'] # Default order
+            ['azure', 'openai', 'copilot', 'gemini'] # Default order
         )
         
         self._initialize_clients()
@@ -143,6 +145,29 @@ class LLMService:
                 logger.info("Azure OpenAI credentials (key, endpoint, or deployment name) not fully configured or are placeholders. Azure OpenAI client not initialized.")
         # No separate else for OPENAI_AVAILABLE for Azure as it's covered by OpenAI's check.
 
+        # Initialize GitHub Copilot client
+        if HTTPX_AVAILABLE:
+            copilot_config = self.llm_settings.get('copilot', {})
+            copilot_api_key = self.api_keys.get('copilot_api_key')
+            
+            if self._is_api_key_valid('copilot_api_key', copilot_api_key):
+                try:
+                    self.copilot_client = httpx.AsyncClient(
+                        headers={
+                            "Authorization": f"Bearer {copilot_api_key}",
+                            "Content-Type": "application/json",
+                            "Copilot-Integration-Id": "vscode-chat"
+                        },
+                        timeout=60.0
+                    )
+                    logger.info("GitHub Copilot client initialized.")
+                except Exception as e:
+                    logger.error(f"Failed to initialize GitHub Copilot client: {e}", exc_info=True)
+            else:
+                logger.info("GitHub Copilot API key not configured or is a placeholder. Copilot client not initialized.")
+        else:
+            logger.info("httpx not available. GitHub Copilot client cannot be initialized.")
+
 
     async def generate_text(
         self,
@@ -219,8 +244,33 @@ class LLMService:
                     )
                     logger.info(f"Successfully generated text using OpenAI model '{model_to_use}'.")
                     return response.choices[0].message.content.strip()
+
+                elif service_name == 'copilot' and self.copilot_client:
+                    model_to_use = final_params.pop('model', service_config.get('model', "gpt-4"))
+                    copilot_endpoint = "https://api.githubcopilot.com/chat/completions"
+                    
+                    # Prepare payload for Copilot API
+                    payload = {
+                        "model": model_to_use,
+                        "messages": [
+                            {"role": "system", "content": "You are a helpful assistant."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        **final_params
+                    }
+                    
+                    try:
+                        response = await self.copilot_client.post(copilot_endpoint, json=payload)
+                        response.raise_for_status()
+                        result = response.json()
+                        content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        logger.info(f"Successfully generated text using GitHub Copilot model '{model_to_use}'.")
+                        return content.strip()
+                    except Exception as copilot_error:
+                        logger.error(f"GitHub Copilot API request failed: {copilot_error}")
+                        raise
                 
-                elif service_name not in ['gemini', 'azure', 'openai']:
+                elif service_name not in ['gemini', 'azure', 'openai', 'copilot']:
                     if service_preference == service_name: # Only warn if it was explicitly requested
                          logger.warning(f"Unknown LLM service preference: {service_name}")
                 else:

@@ -5,7 +5,8 @@
     "azure_openai_api_key": "YOUR_AZURE_OPENAI_API_KEY_HERE",
     "azure_openai_endpoint": "YOUR_AZURE_OPENAI_ENDPOINT_HERE",
     "azure_openai_deployment": "YOUR_AZURE_OPENAI_DEPLOYMENT_NAME_HERE",
-    "azure_api_version": "2024-05-01-preview"
+    "azure_api_version": "2024-05-01-preview",
+    "github_copilot_api_key": "YOUR_GITHUB_COPILOT_API_KEY_HERE"
   },
   "twitter_automation": {
     "response_interval_seconds": 300,
