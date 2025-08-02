@@ -1,0 +1,38 @@
+{
+  "example_goals": [
+    {
+      "description": "Increase engagement rate to 5% within 1 month",
+      "type": "engagement",
+      "target_metrics": {
+        "engagement_rate": 0.05
+      },
+      "deadline_days": 30,
+      "priority": "high"
+    },
+    {
+      "description": "Grow followers in AI/ML niche by 200",
+      "type": "growth",
+      "target_metrics": {
+        "new_followers": 200,
+        "niche": "AI/ML"
+      },
+      "deadline_days": 60,
+      "priority": "medium"
+    },
+    {
+      "description": "Establish thought leadership in tech discussions",
+      "type": "influence",
+      "target_metrics": {
+        "mentions": 50,
+        "quote_tweets": 25
+      },
+      "deadline_days": 90,
+      "priority": "medium"
+    }
+  ],
+  "instructions": [
+    "Copy these examples and modify them for your specific goals",
+    "Use the interactive mode to add goals: python main.py --mode interactive",
+    "Goals can be set in natural language via the CLI or interactive interface"
+  ]
+}

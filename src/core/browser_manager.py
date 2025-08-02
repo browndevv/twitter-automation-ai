@@ -14,7 +14,6 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.common.exceptions import WebDriverException, TimeoutException, InvalidArgumentException
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from webdriver_manager.core.utils import WDM_SSL_VERIFY # To potentially configure SSL verification
 from fake_headers import Headers
 
 # Adjust import path for ConfigLoader and setup_logger
@@ -135,8 +134,9 @@ class BrowserManager:
         options.add_argument(f"user-agent={user_agent}")
 
         if self.browser_settings.get('headless', False):
-            options.add_argument("--headless")
-            options.add_argument("--disable-gpu") # Often needed for headless
+            # options.add_argument("--headless")
+            # options.add_argument("--disable-gpu") # Often needed for headless
+            pass
         
         window_size = self.browser_settings.get('window_size') # e.g., "1920,1080"
         if window_size:
@@ -174,12 +174,12 @@ class BrowserManager:
                 options = self._configure_driver_options(ChromeOptions())
                 # Pass service arguments from config if available
                 service_args = self.browser_settings.get('chrome_service_args', [])
-                service = ChromeService(ChromeDriverManager(path=driver_manager_install_path).install(), service_args=service_args if service_args else None)
+                service = ChromeService(ChromeDriverManager().install(), service_args=service_args if service_args else None)
                 self.driver = webdriver.Chrome(service=service, options=options)
             elif browser_type == 'firefox':
                 options = self._configure_driver_options(FirefoxOptions())
                 service_args = self.browser_settings.get('firefox_service_args', [])
-                service = FirefoxService(GeckoDriverManager(path=driver_manager_install_path).install(), service_args=service_args if service_args else None)
+                service = FirefoxService(GeckoDriverManager().install(), service_args=service_args if service_args else None)
                 self.driver = webdriver.Firefox(service=service, options=options)
             else:
                 logger.error(f"Unsupported browser type: {browser_type}. Cannot initialize WebDriver.")
@@ -305,16 +305,16 @@ if __name__ == '__main__':
     logger.info("Running BrowserManager direct test...")
 
     # Create dummy config files for testing if they don't exist
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    dummy_settings_file = CONFIG_DIR / 'settings.json'
-    dummy_accounts_file = CONFIG_DIR / 'accounts.json' # Not used directly by BM but good for ConfigLoader
-    dummy_cookie_file = CONFIG_DIR / "dummy_cookies.json"
+    APP_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    dummy_settings_file = APP_CONFIG_DIR / 'settings.json'
+    dummy_accounts_file = APP_CONFIG_DIR / 'accounts.json' # Not used directly by BM but good for ConfigLoader
+    dummy_cookie_file = APP_CONFIG_DIR / "dummy_cookies.json"
 
     if not dummy_settings_file.exists():
         settings_data = {
             "browser_settings": {
                 "type": "chrome",  # or "firefox"
-                "headless": True, # Set to False to see the browser
+                "headless": False, # Set to False to see the browser
                 "window_size": "1280,800",
                 "page_load_timeout_seconds": 20,
                 "script_timeout_seconds": 20,

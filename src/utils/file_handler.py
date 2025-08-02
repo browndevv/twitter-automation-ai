@@ -6,19 +6,24 @@ from pathlib import Path
 from typing import Set, List, Optional, Dict, Any
 from datetime import datetime, timezone # Added datetime and timezone
 
-# Adjust import path for ConfigLoader and setup_logger
-try:
-    from ..core.config_loader import ConfigLoader
-    from .logger import setup_logger # Assuming logger.py is in the same utils directory
-except ImportError:
-    # This block allows the script to be run directly for testing,
-    # assuming the script is in src/utils and the root is two levels up.
-    sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-    from src.core.config_loader import ConfigLoader
-    from src.utils.logger import setup_logger
+# Import dependencies
+from src.core.config_loader import ConfigLoader
+from src.utils.logger import setup_logger
 
 config_loader_instance = ConfigLoader() # Initialize once
-logger = setup_logger(config_loader_instance)
+try:
+    logger = setup_logger(config_loader_instance)
+    if logger is None:
+        # Fallback to basic logging if setup_logger fails
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+except Exception as e:
+    # Fallback to basic logging if setup_logger fails
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Failed to setup logger via setup_logger: {e}. Using basic logging.")
 
 # Define project root relative to this file's location (src/utils/file_handler.py)
 # Path(__file__) -> current file

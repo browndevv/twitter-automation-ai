@@ -5,12 +5,8 @@ import json
 from pathlib import Path
 from typing import Optional
 
-# Adjust import path for ConfigLoader
-try:
-    from ..core.config_loader import ConfigLoader
-except ImportError:
-    sys.path.append(str(Path(__file__).resolve().parent.parent.parent)) # Add root src to path
-    from src.core.config_loader import ConfigLoader
+# Import dependencies
+from src.core.config_loader import ConfigLoader
 
 # Define project root relative to this file's location (src/utils/logger.py)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -67,41 +63,45 @@ def setup_logger(config_loader: Optional[ConfigLoader] = None, logger_name: Opti
         # Ensure log directory exists
         try:
             log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            file_log_level_str = file_handler_config.get('level', default_log_level_str).upper()
+            file_log_format = file_handler_config.get('format', default_log_format)
+            file_log_level = getattr(logging, file_log_level_str, log_level)
+
+            # Rotation settings
+            rotation_type = file_handler_config.get('rotation_type', None) # e.g., 'size', 'time'
+            max_bytes = int(file_handler_config.get('max_bytes', 1024 * 1024 * 5)) # 5MB default
+            backup_count = int(file_handler_config.get('backup_count', 5))
+            when = file_handler_config.get('when', 'midnight') # For TimedRotatingFileHandler
+            interval = int(file_handler_config.get('interval', 1)) # For TimedRotatingFileHandler
+
+            if rotation_type == 'size':
+                file_handler = logging.handlers.RotatingFileHandler(
+                    log_file_path, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8'
+                )
+            elif rotation_type == 'time':
+                file_handler = logging.handlers.TimedRotatingFileHandler(
+                    log_file_path, when=when, interval=interval, backupCount=backup_count, encoding='utf-8'
+                )
+            else: # No rotation or invalid type
+                file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
+            
+            file_handler.setLevel(file_log_level)
+            file_handler.setFormatter(logging.Formatter(file_log_format))
+            logger.addHandler(file_handler)
+            
         except OSError as e:
             # Use a basic print here as logger might not be fully set up or could cause recursion
             print(f"Error: Could not create log directory {log_file_path.parent}. File logging disabled. Error: {e}", file=sys.stderr)
-            return # Exit if we can't create log dir
-
-        file_log_level_str = file_handler_config.get('level', default_log_level_str).upper()
-        file_log_format = file_handler_config.get('format', default_log_format)
-        file_log_level = getattr(logging, file_log_level_str, log_level)
-
-        # Rotation settings
-        rotation_type = file_handler_config.get('rotation_type', None) # e.g., 'size', 'time'
-        max_bytes = int(file_handler_config.get('max_bytes', 1024 * 1024 * 5)) # 5MB default
-        backup_count = int(file_handler_config.get('backup_count', 5))
-        when = file_handler_config.get('when', 'midnight') # For TimedRotatingFileHandler
-        interval = int(file_handler_config.get('interval', 1)) # For TimedRotatingFileHandler
-
-        if rotation_type == 'size':
-            file_handler = logging.handlers.RotatingFileHandler(
-                log_file_path, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8'
-            )
-        elif rotation_type == 'time':
-            file_handler = logging.handlers.TimedRotatingFileHandler(
-                log_file_path, when=when, interval=interval, backupCount=backup_count, encoding='utf-8'
-            )
-        else: # No rotation or invalid type
-            file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
-        
-        file_handler.setLevel(file_log_level)
-        file_handler.setFormatter(logging.Formatter(file_log_format))
-        logger.addHandler(file_handler)
+            # Don't return here, continue with console logging only
+            pass
     
     # If no handlers were added at all (e.g., both console and file disabled)
     # add a NullHandler to prevent "No handlers could be found" warnings.
     if not logger.handlers:
         logger.addHandler(logging.NullHandler())
+    
+    return logger  # Return the configured logger
 
 
 if __name__ == '__main__':

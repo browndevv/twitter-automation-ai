@@ -6,7 +6,7 @@
     "azure_openai_endpoint": "YOUR_AZURE_OPENAI_ENDPOINT_HERE",
     "azure_openai_deployment": "YOUR_AZURE_OPENAI_DEPLOYMENT_NAME_HERE",
     "azure_api_version": "2024-05-01-preview",
-    "github_copilot_api_key": "YOUR_GITHUB_COPILOT_API_KEY_HERE"
+    "copilot_api_key": "YOUR_COPILOT_API_KEY_HERE"
   },
   "twitter_automation": {
     "response_interval_seconds": 300,
@@ -53,12 +53,48 @@
       }
     }
   },
+  "llm_settings": {
+    "service_preference_order": [
+      "copilot",
+      "azure",
+      "openai",
+      "gemini"
+    ],
+    "default_max_tokens": 200,
+    "gemini": {
+      "model": "gemini-1.5-flash-latest",
+      "default_params": {
+        "temperature": 0.8
+      }
+    },
+    "openai": {
+      "model": "gpt-4o",
+      "default_params": {
+        "temperature": 0.7
+      }
+    },
+    "azure": {
+      "deployment_name": "YOUR_AZURE_DEPLOYMENT_ID_PRIMARY",
+      "api_version": "2024-05-01-preview",
+      "default_params": {
+        "temperature": 0.75,
+        "max_tokens": 300
+      }
+    },
+    "copilot": {
+      "model": "gpt-4",
+      "default_params": {
+        "temperature": 0.7,
+        "max_tokens": 1000
+      }
+    }
+  },
   "logging": {
     "level": "INFO",
     "format": "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
   },
   "browser_settings": {
-    "type": "firefox",
+    "type": "chrome",
     "headless": true,
     "user_agent_generation": "random",
     "custom_user_agent": null,
@@ -75,5 +111,13 @@
     ],
     "page_load_timeout_seconds": 30,
     "script_timeout_seconds": 30
+  },
+  "agent_settings": {
+    "planning_interval_minutes": 30,
+    "max_concurrent_tasks": 3,
+    "decision_confidence_threshold": 0.7,
+    "memory_retention_days": 90,
+    "enable_learning": true,
+    "enable_autonomous_mode": true
   }
 }

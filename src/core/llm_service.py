@@ -33,6 +33,12 @@ except ImportError:
     AsyncOpenAI = None # Define for type hinting
     AsyncAzureOpenAI = None
 
+try:
+    import httpx
+    HTTPX_AVAILABLE = True
+except ImportError:
+    HTTPX_AVAILABLE = False
+
 
 # Initialize logger - Assumes setup_logger has been called by the application entry point.
 # If running this module directly for tests, basicConfig might be needed in __main__.
@@ -62,7 +68,7 @@ class LLMService:
         
         self.service_preference_order: List[str] = self.llm_settings.get(
             'service_preference_order', 
-            ['azure', 'openai', 'copilot', 'gemini'] # Default order
+            ['copilot', 'azure', 'openai', 'gemini'] # Default order
         )
         
         self._initialize_clients()
@@ -83,7 +89,7 @@ class LLMService:
         # Initialize Gemini client
         if GEMINI_AVAILABLE:
             gemini_config = self.llm_settings.get('gemini', {})
-            gemini_api_key = self.api_keys.get('gemini_api_key')
+            gemini_api_key = self.config_loader.get_api_key('gemini_api_key')
             
             if self._is_api_key_valid('gemini_api_key', gemini_api_key):
                 try:
@@ -105,7 +111,7 @@ class LLMService:
         # Initialize OpenAI client (Async)
         if OPENAI_AVAILABLE:
             openai_config = self.llm_settings.get('openai', {})
-            openai_api_key = self.api_keys.get('openai_api_key')
+            openai_api_key = self.config_loader.get_api_key('openai_api_key')
 
             if self._is_api_key_valid('openai_api_key', openai_api_key):
                 try:
@@ -122,11 +128,11 @@ class LLMService:
         # Azure client also depends on OPENAI_AVAILABLE because it uses the same SDK.
         if OPENAI_AVAILABLE: # Check again as it's a separate client
             azure_config = self.llm_settings.get('azure', {})
-            azure_api_key = self.api_keys.get('azure_openai_api_key')
-            azure_endpoint = self.api_keys.get('azure_openai_endpoint')
+            azure_api_key = self.config_loader.get_api_key('azure_openai_api_key')
+            azure_endpoint = self.config_loader.get_api_key('azure_openai_endpoint')
             # Deployment name is critical and acts as the "model" for Azure
-            azure_deployment_name = azure_config.get('deployment_name') or self.api_keys.get('azure_openai_deployment') 
-            azure_api_version = azure_config.get('api_version') or self.api_keys.get('azure_api_version', '2024-05-01-preview')
+            azure_deployment_name = azure_config.get('deployment_name') or self.config_loader.get_api_key('azure_openai_deployment') 
+            azure_api_version = azure_config.get('api_version') or self.config_loader.get_api_key('azure_api_version') or '2024-05-01-preview'
 
             if (self._is_api_key_valid('azure_openai_api_key', azure_api_key) and
                 self._is_api_key_valid('azure_openai_endpoint', azure_endpoint) and
@@ -148,7 +154,7 @@ class LLMService:
         # Initialize GitHub Copilot client
         if HTTPX_AVAILABLE:
             copilot_config = self.llm_settings.get('copilot', {})
-            copilot_api_key = self.api_keys.get('copilot_api_key')
+            copilot_api_key = self.config_loader.get_api_key('copilot_api_key')
             
             if self._is_api_key_valid('copilot_api_key', copilot_api_key):
                 try:

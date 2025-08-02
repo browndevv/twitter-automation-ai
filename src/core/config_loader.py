@@ -1,7 +1,17 @@
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Union, Optional
+
+# Load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file
+    # DEBUG: Print Copilot key to confirm loading
+    print("[DEBUG] GITHUB_COPILOT_API_KEY:", os.environ.get("GITHUB_COPILOT_API_KEY"))
+except ImportError:
+    pass  # dotenv not available, continue without it
 
 # Define project root relative to this file's location (src/core/config_loader.py)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -101,8 +111,34 @@ class ConfigLoader:
             return default
 
     def get_api_key(self, service_name: str) -> Optional[str]:
-        """Retrieves an API key for a specific service."""
-        return self.get_setting(f'api_keys.{service_name}')
+        """Retrieves an API key for a specific service, checking environment variables first."""
+        # Check environment variable first (with common naming patterns)
+        env_patterns = [
+            service_name.upper(),
+            f"{service_name.upper()}_API_KEY",
+            service_name.upper().replace('_API_KEY', ''),  # Remove duplicate _API_KEY
+        ]
+        
+        # Special case for GitHub Copilot
+        if service_name.lower() in ['copilot_api_key', 'github_copilot_api_key']:
+            env_patterns = ['GITHUB_COPILOT_API_KEY', 'COPILOT_API_KEY']
+        
+        for pattern in env_patterns:
+            env_value = os.environ.get(pattern)
+            if env_value and env_value.strip():
+                logger.debug(f"Found API key for {service_name} in environment variable {pattern}")
+                return env_value.strip()
+        
+        # Fall back to config file
+        config_value = self.get_setting(f'api_keys.{service_name}')
+        if config_value and isinstance(config_value, str) and config_value.strip():
+            # Don't return placeholder values
+            placeholder_patterns = ['YOUR_', '_HERE', 'PLACEHOLDER']
+            if not any(pattern in config_value.upper() for pattern in placeholder_patterns):
+                return config_value.strip()
+        
+        logger.debug(f"No valid API key found for {service_name}")
+        return None
 
     def get_twitter_automation_setting(self, setting_name: str, default: Any = None) -> Any:
         """Retrieves a specific setting from the 'twitter_automation' block."""

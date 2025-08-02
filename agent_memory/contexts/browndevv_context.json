@@ -1,0 +1,12 @@
+{
+  "account_id": "browndevv",
+  "current_goals": [
+    {
+      "id": "browndevv_1754158452.77055",
+      "description": "Increase engagement, post more frequently, and expand account reach.",
+      "target_metrics": {
+        "followers": 2000,
+        "engagement_rate": 0.06,
+        "posts_per_week": 7
+      },
+      "deadline": 

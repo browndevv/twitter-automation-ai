@@ -6,3 +6,6 @@ langchain-google-genai
 openai
 requests
 python-dotenv
+asyncio
+pathlib
+enum34

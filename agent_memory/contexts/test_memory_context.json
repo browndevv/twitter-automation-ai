@@ -1,0 +1,22 @@
+{
+  "account_id": "test_memory",
+  "current_goals": [],
+  "active_tasks": [],
+  "memory": {
+    "action_history": [
+      {
+        "timestamp": "2025-07-27T12:21:33.672734",
+        "action": "test_action",
+        "result": "success"
+      }
+    ],
+    "successful_strategies": [],
+    "failed_strategies": [],
+    "performance_metrics": {},
+    "learned_patterns": {},
+    "last_updated": "2025-07-27T12:21:33.672734"
+  },
+  "environment_state": {},
+  "last_action_time": null,
+  "saved_at": "2025-07-27T12:21:33.672734"
+}
