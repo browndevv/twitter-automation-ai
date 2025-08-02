@@ -173,8 +173,25 @@ config/accounts.json
 media_files/
 processed_tweets_log.csv
 *.cookie
-*.json # If other json files with sensitive data might be created, otherwise be more specific
-# Example: cookies_*.json
+
+# Selenium/WebDriver
+.wdm_cache/
+.wdm_cache_test/
+
+# Project-specific
+agent_memory/contexts/*.json
+agent_memory/performance/*.json
+media_files/
+cookies/
+
+# Ignore config secrets (but keep templates)
+config/accounts.json
+config/browndevv_cookies.json
+
+# Ignore test artifacts
+agent_memory/contexts/test_memory_context.json
+
+# Remove overly broad *.json ignore, be more specific above
 
 # Backup files
 *.bak
