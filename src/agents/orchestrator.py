@@ -101,8 +101,9 @@ class AgentOrchestrator:
                     context.memory = saved_context.memory
                     context.current_goals = saved_context.current_goals
                     context.active_tasks = saved_context.active_tasks
-                    context.environment_state = saved_context.environment_state
-                    context.last_action_time = saved_context.last_action_time
+                    context.completed_tasks = saved_context.completed_tasks
+                    context.last_activity = saved_context.last_activity
+                    context.performance_score = saved_context.performance_score
                     self.core_agent.contexts[account_config.account_id] = context
                 
                 # Initialize browser manager for this account

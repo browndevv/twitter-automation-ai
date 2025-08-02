@@ -47,16 +47,16 @@ class AgentMemoryManager:
                 "account_id": account_id,
                 "current_goals": [goal.model_dump() for goal in context.current_goals],
                 "active_tasks": [task.model_dump() for task in context.active_tasks],
+                "completed_tasks": [task.model_dump() for task in context.completed_tasks],
                 "memory": {
-                    "action_history": context.memory.action_history,
-                    "successful_strategies": context.memory.successful_strategies,
-                    "failed_strategies": context.memory.failed_strategies,
-                    "performance_metrics": context.memory.performance_metrics,
-                    "learned_patterns": context.memory.learned_patterns,
+                    "account_id": context.memory.account_id,
+                    "successful_content_patterns": context.memory.successful_content_patterns,
+                    "engagement_insights": context.memory.engagement_insights,
+                    "performance_trends": context.memory.performance_trends,
                     "last_updated": context.memory.last_updated.isoformat()
                 },
-                "environment_state": context.environment_state,
-                "last_action_time": context.last_action_time.isoformat() if context.last_action_time else None,
+                "last_activity": context.last_activity.isoformat() if context.last_activity else None,
+                "performance_score": context.performance_score,
                 "saved_at": datetime.now().isoformat()
             }
             
@@ -75,45 +75,61 @@ class AgentMemoryManager:
             
             if not context_file.exists():
                 # Create new context if none exists
-                return AgentContext(account_config=account_config)
+                memory = AgentMemory(account_id=account_id)
+                return AgentContext(account_id=account_id, memory=memory)
             
             with open(context_file, 'r', encoding='utf-8') as f:
                 context_data = json.load(f)
             
             # Reconstruct context objects
-            from .core_agent import AgentGoal, AgentTask, TaskStatus, AgentRole, TaskPriority
+            from .models import AgentGoal, AgentTask, TaskStatus, AgentRole, TaskPriority
             
             # Reconstruct goals
             goals = []
             for goal_data in context_data.get("current_goals", []):
+                # Ensure account_id is present in goal data
+                if "account_id" not in goal_data:
+                    goal_data["account_id"] = account_id
                 goal = AgentGoal(**goal_data)
                 goals.append(goal)
             
-            # Reconstruct tasks
+            # Reconstruct tasks  
             tasks = []
             for task_data in context_data.get("active_tasks", []):
+                # Ensure account_id is present in task data
+                if "account_id" not in task_data:
+                    task_data["account_id"] = account_id
                 task = AgentTask(**task_data)
                 tasks.append(task)
+            
+            # Reconstruct completed tasks
+            completed_tasks = []
+            for task_data in context_data.get("completed_tasks", []):
+                # Ensure account_id is present in task data
+                if "account_id" not in task_data:
+                    task_data["account_id"] = account_id
+                task = AgentTask(**task_data)
+                completed_tasks.append(task)
             
             # Reconstruct memory
             memory_data = context_data.get("memory", {})
             memory = AgentMemory(
-                action_history=memory_data.get("action_history", []),
-                successful_strategies=memory_data.get("successful_strategies", []),
-                failed_strategies=memory_data.get("failed_strategies", []),
-                performance_metrics=memory_data.get("performance_metrics", {}),
-                learned_patterns=memory_data.get("learned_patterns", {}),
+                account_id=account_id,
+                successful_content_patterns=memory_data.get("successful_content_patterns", []),
+                engagement_insights=memory_data.get("engagement_insights", {}),
+                performance_trends=memory_data.get("performance_trends", {}),
                 last_updated=datetime.fromisoformat(memory_data.get("last_updated", datetime.now().isoformat()))
             )
             
             # Create context
             context = AgentContext(
-                account_config=account_config,
+                account_id=account_id,
                 current_goals=goals,
                 active_tasks=tasks,
+                completed_tasks=completed_tasks,
                 memory=memory,
-                environment_state=context_data.get("environment_state", {}),
-                last_action_time=datetime.fromisoformat(context_data["last_action_time"]) if context_data.get("last_action_time") else None
+                last_activity=datetime.fromisoformat(context_data["last_activity"]) if context_data.get("last_activity") else None,
+                performance_score=context_data.get("performance_score", 0.0)
             )
             
             self.logger.debug(f"Loaded context for account: {account_id}")

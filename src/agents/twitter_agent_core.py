@@ -301,6 +301,131 @@ class TwitterAgentCore:
             
             return {"success": False, "error": str(e)}
     
+    async def execute_cycle(self, account_id: str) -> Dict[str, Any]:
+        """Execute a complete automation cycle for an account"""
+        try:
+            self.logger.info(f"Starting execution cycle for account: {account_id}")
+            
+            # Check if we have context for this account
+            if account_id not in self.contexts:
+                self.logger.error(f"No context found for account: {account_id}")
+                return {"success": False, "error": "Account context not found"}
+            
+            context = self.contexts[account_id]
+            cycle_results = []
+            
+            # Step 1: Analyze current goals and generate tasks
+            self.logger.info(f"Analyzing goals for account: {account_id}")
+            for goal in context.current_goals:
+                if goal.status == "active":
+                    # Generate tasks for this goal
+                    tasks = await self._generate_tasks_for_goal(account_id, goal)
+                    for task in tasks:
+                        context.active_tasks.append(task)
+                        cycle_results.append(f"Generated task: {task.description}")
+            
+            # Step 2: Execute high-priority pending tasks
+            self.logger.info(f"Executing pending tasks for account: {account_id}")
+            executed_tasks = 0
+            max_tasks_per_cycle = 3  # Limit tasks per cycle to avoid overwhelming
+            
+            # Sort tasks by priority
+            context.active_tasks.sort(key=lambda t: t.priority.value, reverse=True)
+            
+            for task in context.active_tasks[:max_tasks_per_cycle]:
+                if task.status == TaskStatus.PENDING:
+                    result = await self.execute_task(account_id, task.id)
+                    cycle_results.append(f"Executed task: {task.description} - Result: {result.get('success', False)}")
+                    executed_tasks += 1
+            
+            # Step 3: Update context and performance
+            context.last_activity = datetime.now()
+            performance = await self.analyze_performance(account_id)
+            
+            cycle_summary = {
+                "success": True,
+                "account_id": account_id,
+                "tasks_executed": executed_tasks,
+                "goals_active": len([g for g in context.current_goals if g.status == "active"]),
+                "tasks_pending": len([t for t in context.active_tasks if t.status == TaskStatus.PENDING]),
+                "performance_score": performance.get("success_rate", 0),
+                "cycle_results": cycle_results,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            self.logger.info(f"Cycle completed for account: {account_id} - Tasks executed: {executed_tasks}")
+            return cycle_summary
+            
+        except Exception as e:
+            self.logger.error(f"Error in execution cycle for {account_id}: {e}")
+            return {"success": False, "error": str(e), "account_id": account_id}
+    
+    async def _generate_tasks_for_goal(self, account_id: str, goal: AgentGoal) -> List[AgentTask]:
+        """Generate specific tasks to work towards a goal"""
+        try:
+            # Use LLM to generate relevant tasks based on the goal
+            prompt = f"""
+            Given this goal for Twitter account @{account_id}:
+            Goal: {goal.description}
+            Target metrics: {goal.target_metrics}
+            
+            Generate 1-3 specific, actionable tasks that would help achieve this goal.
+            Tasks should be realistic and achievable within a day.
+            
+            Respond with a JSON array of tasks, each with:
+            - description: Clear task description
+            - priority: high/medium/low
+            - estimated_duration: minutes needed
+            - task_type: content_creation/engagement/analysis/growth
+            
+            Example:
+            [
+                {
+                    "description": "Create and post an engaging tweet about AI trends",
+                    "priority": "high", 
+                    "estimated_duration": 15,
+                    "task_type": "content_creation"
+                }
+            ]
+            """
+            
+            response = await self.llm_service.generate_response(prompt, max_tokens=500)
+            
+            # Parse the response
+            import json
+            tasks_data = json.loads(response.strip())
+            
+            tasks = []
+            for task_data in tasks_data:
+                task_id = f"task_{account_id}_{int(datetime.now().timestamp() * 1000)}"
+                
+                task = AgentTask(
+                    id=task_id,
+                    account_id=account_id,
+                    goal_id=goal.id,
+                    description=task_data["description"],
+                    priority=TaskPriority(task_data.get("priority", "medium")),
+                    estimated_duration=task_data.get("estimated_duration", 30),
+                    task_type=task_data.get("task_type", "general")
+                )
+                tasks.append(task)
+            
+            return tasks
+            
+        except Exception as e:
+            self.logger.error(f"Error generating tasks for goal {goal.id}: {e}")
+            # Return a default task if LLM generation fails
+            fallback_task = AgentTask(
+                id=f"task_{account_id}_{int(datetime.now().timestamp() * 1000)}",
+                account_id=account_id,
+                goal_id=goal.id,
+                description=f"Work towards goal: {goal.description}",
+                priority=TaskPriority.MEDIUM,
+                estimated_duration=30,
+                task_type="general"
+            )
+            return [fallback_task]
+    
     async def analyze_performance(self, account_id: str) -> Dict[str, Any]:
         """Analyze agent performance for an account"""
         if account_id not in self.contexts:
