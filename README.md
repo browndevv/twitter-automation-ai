@@ -97,7 +97,7 @@ python main.py --goal "Increase followers by 50% this month" --goal-account brow
 - `src/agents/` - Core agentic system
   - `orchestrator.py` - Coordinates multiple agents and accounts
   - `core_agent.py` - Central decision-making AI agent
-  - `specialized_agents.py` - Task-specific agents (content, engagement, etc.)
+  - `specialized/` - Modular task-specific agents (content, engagement, etc.)
   - `memory_manager.py` - Persistent memory and learning system
 - `src/core/` - Core services (LLM, configuration)
 - `src/utils/` - Utilities (logging, file handling)

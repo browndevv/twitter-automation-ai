@@ -19,7 +19,7 @@ from src.core.browser_manager import BrowserManager
 from src.core.llm_service import LLMService
 from src.data_models import AccountConfig
 from src.agents.core_agent import TwitterAgentCore, AgentGoal, TaskPriority
-from src.agents.specialized_agents import (
+from src.agents.specialized import (
     BaseSpecializedAgent, 
     ContentCreatorAgent, 
     ContentCuratorAgent,

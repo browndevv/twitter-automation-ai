@@ -103,12 +103,14 @@ class AgentRole(str, Enum):
 - `make_decisions()`: Analyzes situations and decides actions
 - `analyze_situation()`: Evaluates current account state
 
-### 4. Specialized Agents (`src/agents/specialized_agents.py`)
+### 4. Specialized Agents (`src/agents/specialized/`)
 
-**Purpose**: Task-specific automation capabilities
-**Location**: `/src/agents/specialized_agents.py`
+**Purpose**: Task-specific automation capabilities  
+**Location**: `/src/agents/specialized/`
 
-#### Base Specialized Agent
+The specialized agents have been modularized into separate files for better maintainability:
+
+#### Base Specialized Agent (`base_agent.py`)
 ```python
 class BaseSpecializedAgent(ABC):
     def __init__(self, role, llm_service, browser_manager=None):
@@ -116,22 +118,22 @@ class BaseSpecializedAgent(ABC):
         self.performance_metrics = {}  # Performance tracking
 ```
 
-#### Content Creator Agent
+#### Content Creator Agent (`content_creator.py`)
 - **Purpose**: Original content generation
 - **Capabilities**: Tweet composition, thread creation, brand voice consistency
 - **Methods**: `_create_original_tweet()`, `_create_thread()`, `_write_reply()`
 
-#### Content Curator Agent
+#### Content Curator Agent (`content_curator.py`)
 - **Purpose**: Content discovery and sharing
 - **Capabilities**: Source quality content, competitor analysis, trend monitoring
 - **Methods**: `_curate_content()`, `_share_curated_content()`
 
-#### Engagement Manager Agent
+#### Engagement Manager Agent (`engagement_manager.py`)
 - **Purpose**: Community interaction management
 - **Capabilities**: Reply management, conversation engagement, relationship building
 - **Methods**: `_engage_with_followers()`, `_manage_replies()`
 
-#### Performance Analyst Agent
+#### Performance Analyst Agent (`performance_analyst.py`)
 - **Purpose**: Analytics and optimization
 - **Capabilities**: Metrics tracking, performance analysis, strategy optimization
 - **Methods**: `_analyze_performance_metrics()`, `_generate_performance_report()`

@@ -341,7 +341,9 @@ async def plan_for_goal(self, account_id: str, goal: AgentGoal) -> None
 - `account_id`: Target account
 - `goal`: Goal to plan for
 
-### 3. Specialized Agents (`src/agents/specialized_agents.py`)
+### 3. Specialized Agents (`src/agents/specialized/`)
+
+The specialized agents package has been modularized into separate files for better maintainability.
 
 **Purpose**: Task-specific automation capabilities.
 
@@ -739,7 +741,7 @@ asyncio.run(main())
 ### Custom Agent Implementation
 
 ```python
-from src.agents.specialized_agents import BaseSpecializedAgent
+from src.agents.specialized import BaseSpecializedAgent
 from src.agents.core_agent import AgentRole
 
 class CustomAgent(BaseSpecializedAgent):
